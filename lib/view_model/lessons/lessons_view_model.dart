@@ -1,10 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:sondeurs/data/response/api_response.dart';
 import 'package:sondeurs/model/lesson/lesson_model.dart';
 import 'package:sondeurs/repository/lesson/lesson_repository.dart';
-import 'package:sondeurs/routes/routes_name.dart';
-import 'package:sondeurs/utils/utils.dart';
 
 class LessonViewModel with ChangeNotifier {
   final _myRepo = LessonRepository();
@@ -87,6 +84,18 @@ class LessonViewModel with ChangeNotifier {
       success = true;
     }).onError((error, stackTrace) {
       setLessonsList(ApiResponse.error(error.toString()));
+    });
+    return success;
+  }
+
+  Future<bool> create (Map data, Map<String, dynamic> files) async {
+    bool success = false;
+    await _myRepo.create(data, files).then((value) {
+      success = true;
+    }).onError((error, stackTrace) {
+      if (kDebugMode) {
+        print(error);
+      }
     });
     return success;
   }

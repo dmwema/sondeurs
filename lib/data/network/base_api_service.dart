@@ -25,7 +25,7 @@ abstract class BaseApiServices {
     String url,
     dynamic data,
     {
-      required String filename
+      required Map<String, dynamic> files
     }
   );
 

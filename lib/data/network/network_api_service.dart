@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
 import 'package:sondeurs/data/app_exceptions.dart';
 import 'package:sondeurs/data/network/base_api_service.dart';
 import 'package:sondeurs/model/user/user_model.dart';
 import 'package:sondeurs/service/user_service.dart';
-import 'package:sondeurs/utils/utils.dart';
 
 class NetworkApiService extends BaseApiServices {
   Future<UserModel> getAccountData () => UserService().getUser();
@@ -141,16 +139,21 @@ class NetworkApiService extends BaseApiServices {
   }
 
   @override
-  Future getMultipartApiResponse(String url, data, {required String filename}) async {
+  Future getMultipartApiResponse(String url, data, {required Map<String, dynamic> files}) async {
     dynamic responseJson;
     try {
       var postUri = Uri.parse(url);
 
       http.MultipartRequest request = http.MultipartRequest("POST", postUri);
 
-      http.MultipartFile multipartFile = await http.MultipartFile.fromPath(filename, data[filename].path);
+      files.forEach((name, file) async {
+        http.MultipartFile multipartFile = await http.MultipartFile.fromPath(name, file.path);
+        request.files.add(multipartFile);
+      });
 
-      request.files.add(multipartFile);
+      data.forEach((key, value) {
+        request.fields[key] = value.toString();
+      });
 
       http.StreamedResponse response = await request.send();
       var responseData = await http.Response.fromStream(response);

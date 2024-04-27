@@ -40,4 +40,13 @@ class LessonRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> create (Map data, Map<String, dynamic> $files) async {
+    try  {
+      dynamic response = await _apiServices.getMultipartApiResponse(AppUrl.lessonsEndPoint, data, files: $files);
+      return response;
+    } catch(e) {
+      rethrow;
+    }
+  }
 }

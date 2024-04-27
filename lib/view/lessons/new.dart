@@ -28,6 +28,12 @@ class _NewViewState extends State<NewView> {
   CategoryListModel? categories;
   CategoryModel? selectedCategory;
   String time = "00:00";
+
+  bool loading = false;
+
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+
   XFile? image;
 
   File? audioFile;
@@ -83,8 +89,8 @@ class _NewViewState extends State<NewView> {
         audioDuration = value ?? Duration.zero;
       });
     });
-    audioPlayer.setReleaseMode(ReleaseMode.loop);
-    audioPlayer.setSourceAsset(audioFile!.path.toString());
+    audioPlayer.setReleaseMode(ReleaseMode.stop);
+    audioPlayer.setSourceUrl(audioFile!.path.toString());
   }
 
   Future getCategories () async {
@@ -99,16 +105,25 @@ class _NewViewState extends State<NewView> {
     await recorder.startRecorder(toFile: 'audio');
   }
 
-  Future stop () async {
-    final path = await recorder.stopRecorder();
-    if (path != null) {
+  Future stop() async {
+    await recorder.stopRecorder().then((value) {
       setState(() {
-        audioFile = File(path);
+        audioFile = File(value.toString());
       });
       setAudio();
-      print('Recorded audio $path');
-    }
+      print(value);
+    });
   }
+
+  // Future stop () async {
+  //   final path = await recorder.stopRecorder();
+  //   if (path != null) {
+  //     setState(() {
+  //     });
+  //     setAudio();
+  //     print('Recorded audio ${audioFile!.uri}');
+  //   }
+  // }
 
   Future resume () async {
     recorder.resumeRecorder();
@@ -190,9 +205,20 @@ class _NewViewState extends State<NewView> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    CustomFormField(label: "Titre", hint: "Entrez un titre", password: false),
+                    CustomFormField(
+                      label: "Titre",
+                      hint: "Entrez un titre",
+                      controller: _titleController,
+                      password: false
+                    ),
                     const SizedBox(height: 10,),
-                    CustomFormField(label: "Description", hint: "Entrez une description", maxLines: 3, password: false),
+                    CustomFormField(
+                      label: "Description",
+                      hint: "Entrez une description",
+                      maxLines: 3,
+                      password: false,
+                      controller: _descriptionController,
+                    ),
                     const SizedBox(height: 10,),
                     InkWell(
                       onTap: () {
@@ -284,6 +310,7 @@ class _NewViewState extends State<NewView> {
                       onTap: () async {
                         var img = await picker.pickImage(source: ImageSource.gallery).onError((error, stackTrace) {
                           Utils.flushBarErrorMessage("Une erreur est survenue lors de l'importation de l'image", context);
+                          return null;
                         });
                         if (img != null) {
                           setState(() {
@@ -446,12 +473,67 @@ class _NewViewState extends State<NewView> {
                         ],
                       ),
                     ),
+                    if (recorder.isStopped && audioFile != null)
+                    const SizedBox(height: 5,),
+                    if (recorder.isStopped && audioFile != null)
+                      InkWell(
+                      onTap: () {
+                        setState(() {
+                          audioFile = null;
+                        });
+                      },
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text("Annuler", style: TextStyle(
+                            color: Colors.white
+                          ),),
+                          SizedBox(width: 5,),
+                          Icon(Icons.close, color: Colors.white, size: 18,)
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 20,),
                     RoundedButton(
                       title: "Enregistrer",
-                      loading: false,
-                      onPress: () {
+                      loading: loading,
+                      onPress: () async {
+                        if (!loading) {
+                          setState(() {
+                            loading = true;
+                          });
+                          if (_titleController.text == "") {
+                            Utils.flushBarErrorMessage("Vous devez entrer un titre", context);
+                          } else if (_descriptionController.text == "") {
+                            Utils.flushBarErrorMessage("Vous devez entrer une description", context);
+                          } else if (selectedCategory == null) {
+                            Utils.flushBarErrorMessage("Vous devez selectionner une categorie", context);
+                          } else if (audioFile == null) {
+                            Utils.flushBarErrorMessage("Vous devez enregistrer la lecon", context);
+                          } else {
+                            Map data = {
+                              "title": _titleController.text,
+                              "description": _descriptionController.text,
+                              "category": "${selectedCategory!.id}",
+                            };
+                            Map<String, dynamic> files = {
+                              "image": image,
+                              "audio": audioFile
+                            };
 
+                            await lessonViewModel.create(data, files).then((value) {
+                              setState(() {
+                                loading = false;
+                              });
+                              if (value) {
+                                Utils.toastMessage("Lecon enregistre avec succes");
+                                Navigator.pushNamedAndRemoveUntil(context, RoutesName.allLessons, (route) => false);
+                              } else {
+                                Utils.flushBarErrorMessage("Une erreur est survenue. Veuillez verifier les informations entrees", context);
+                              }
+                            });
+                          }
+                        }
                       }
                     )
                   ],

@@ -8,7 +8,7 @@ class UserRepository {
 
   Future<dynamic> userImage (id, data, {required BuildContext context}) async {
     try  {
-      dynamic response = await _apiServices.getMultipartApiResponse("${AppUrl.userEndPoint}/$id/image", data, filename: "image");
+      dynamic response = await _apiServices.getMultipartApiResponse("${AppUrl.userEndPoint}/$id/image", data, files: {"image": data['image']});
       return response;
     } catch(e) {
       rethrow;

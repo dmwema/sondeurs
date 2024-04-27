@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sondeurs/data/response/status.dart';
 import 'package:sondeurs/model/lesson/lesson_model.dart';
+import 'package:sondeurs/resource/config/app_url.dart';
 import 'package:sondeurs/resource/config/colors.dart';
 import 'package:sondeurs/routes/routes_name.dart';
 import 'package:sondeurs/view_model/lessons/lessons_view_model.dart';
@@ -151,7 +152,7 @@ class _AllViewState extends State<AllView> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
                                     image: current.imagePath == null ? null : DecorationImage(
-                                        image: NetworkImage(current.imagePath.toString()),
+                                        image: NetworkImage(AppUrl.domainName + current.imagePath.toString()),
                                         fit: BoxFit.cover
                                     ),
                                     color: current.imagePath == null ? Colors.white : null,
@@ -169,7 +170,7 @@ class _AllViewState extends State<AllView> {
                                       ),
                                     ),
                                     Text(
-                                      current.description.toString().substring(1, 40),
+                                    current.description.toString().length > 40 ? current.description.toString().substring(1, 40): current.description.toString(),
                                       style: TextStyle(
                                         fontWeight: FontWeight.w400,
                                         color: Colors.white.withOpacity(.5),

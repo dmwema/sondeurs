@@ -12,6 +12,7 @@ import 'package:sondeurs/model/user/user_model.dart';
 import 'package:sondeurs/resource/audio/common.dart';
 import 'package:sondeurs/resource/components/popup/confirm_popup.dart';
 import 'package:sondeurs/resource/components/shimmer/profile_picture_shimmer.dart';
+import 'package:sondeurs/resource/config/app_url.dart';
 import 'package:sondeurs/resource/config/colors.dart';
 import 'package:sondeurs/routes/routes_name.dart';
 import 'package:sondeurs/service/user_service.dart';
@@ -177,7 +178,7 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                 if (!audioLoaded) {
                   audioLoaded = true;
                   try {
-                    _player.setAudioSource(AudioSource.uri(Uri.parse(lesson.audioPath.toString())));
+                    _player.setAudioSource(AudioSource.uri(Uri.parse( AppUrl.domainName + lesson.audioPath.toString())));
                   } on PlayerException catch (e) {
                     print("Error loading audio source: $e");
                   }
@@ -192,7 +193,7 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                           color: Colors.transparent,
                           image: lesson.imagePath == null ? null : DecorationImage(
                             fit: BoxFit.cover,
-                            image: NetworkImage(lesson.imagePath.toString()),
+                            image: NetworkImage(AppUrl.domainName + lesson.imagePath.toString()),
                           ),
                         ),
                         height: 250.0,
@@ -262,6 +263,7 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                                   ),),
                                 ),
                                 const SizedBox(height: 2,),
+                                if (lesson.author != null)
                                 Text("${lesson.author!.firstname} ${lesson.author!.lastname}", style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w400,
@@ -344,8 +346,8 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                                                 height: 40,
                                                 decoration: BoxDecoration(
                                                   borderRadius: BorderRadius.circular(30),
-                                                  image: current.imagePath == null ? null : DecorationImage(
-                                                      image: NetworkImage(current.imagePath.toString()),
+                                                  image:current.imagePath == null ? null : DecorationImage(
+                                                      image: NetworkImage( AppUrl.domainName + current.imagePath.toString()),
                                                       fit: BoxFit.cover
                                                   ),
                                                   color: current.imagePath == null ? Colors.white : null,
@@ -363,7 +365,7 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                                                     ),
                                                   ),
                                                   Text(
-                                                    current.description.toString().substring(1, 40),
+                                                  current.description.toString().length > 40 ? current.description.toString().substring(1, 40) : current.description.toString(),
                                                     style: TextStyle(
                                                       fontWeight: FontWeight.w400,
                                                       color: Colors.white.withOpacity(.5),
