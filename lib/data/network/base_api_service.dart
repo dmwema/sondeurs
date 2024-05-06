@@ -25,7 +25,7 @@ abstract class BaseApiServices {
     String url,
     dynamic data,
     {
-      required Map<String, dynamic> files
+      required Map<String, dynamic> files, bool auth = false
     }
   );
 

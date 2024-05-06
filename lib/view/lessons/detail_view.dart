@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:audio_session/audio_session.dart';
+import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sondeurs/data/response/status.dart';
 import 'package:sondeurs/model/lesson/lesson_model.dart';
 import 'package:sondeurs/model/user/user_model.dart';
@@ -17,7 +21,9 @@ import 'package:sondeurs/resource/config/colors.dart';
 import 'package:sondeurs/routes/routes_name.dart';
 import 'package:sondeurs/service/user_service.dart';
 import 'package:sondeurs/utils/utils.dart';
+import 'package:sondeurs/view/lessons/edit_view.dart';
 import 'package:sondeurs/view_model/lessons/lessons_view_model.dart';
+import 'package:dio/dio.dart';
 
 class DetailView extends StatefulWidget {
   final int id;
@@ -35,10 +41,32 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
   UserModel? user;
   LessonViewModel lessonViewModel = LessonViewModel();
 
+  bool isLoading = false;
+
+  bool loadingDetail = true;
+  bool loadingSimilar = true;
+  bool loading = false;
+
+  File? audioFile;
+
+  LessonModel? lessonData;
+
+  final Trimmer _trimmer = Trimmer();
+
+  Future<void> downloadFile(String url) async {
+    final appDocumentsDir = await getApplicationDocumentsDirectory();
+    final savePath = '${appDocumentsDir.path}/lesson.mp3';
+
+    final dio = Dio();
+    await dio.download(url, savePath);
+    setState(() {
+      audioFile = File(savePath);
+    });
+  }
+
   @override
   void dispose() {
     lessonViewModel.dispose();
-    ambiguates(WidgetsBinding.instance)!.removeObserver(this);
     _player.dispose();
     super.dispose();
   }
@@ -81,9 +109,9 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
     _player.playbackEventStream.listen((event) {},
-        onError: (Object e, StackTrace stackTrace) {
-          print('A stream error occurred: $e');
-        });
+      onError: (Object e, StackTrace stackTrace) {
+        print('A stream error occurred: $e');
+      });
   }
 
   @override
@@ -114,7 +142,24 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
             fontSize: 17
         ),),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.share_rounded, color: Colors.white,)),
+          IconButton(onPressed: () async {
+            if (audioFile != null && lessonData != null) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) {
+                  return EditView(
+                      lesson: lessonData!,
+                      file: audioFile!
+                  );
+                }),
+              );
+            }
+          }, icon: const Icon(Icons.cut, color: Colors.white,)),
+          IconButton(onPressed: () async {
+            if (lessonData != null && audioFile != null) {
+              Share.shareXFiles([XFile(audioFile!.path)]);
+            }
+          }, icon: const Icon(Icons.share_rounded, color: Colors.white,)),
+          if (user != null && Utils.isAuthor(user!))
           IconButton(onPressed: () {
             showDialog(
               context: context, builder: (context) {
@@ -174,16 +219,12 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                 );
               case Status.COMPLETED:
                 LessonModel lesson = value.lessonDetail.data!;
-
+                lessonData = lesson;
                 if (!audioLoaded) {
                   audioLoaded = true;
-                  try {
-                    _player.setAudioSource(AudioSource.uri(Uri.parse( AppUrl.domainName + lesson.audioPath.toString())));
-                  } on PlayerException catch (e) {
-                    print("Error loading audio source: $e");
-                  }
+                  downloadFile(AppUrl.domainName + lesson.audioPath.toString());
+                  _player.setAudioSource(AudioSource.uri(Uri.parse(AppUrl.domainName + lesson.audioPath.toString())));
                 }
-
                 return Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
@@ -196,10 +237,10 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                             image: NetworkImage(AppUrl.domainName + lesson.imagePath.toString()),
                           ),
                         ),
-                        height: 250.0,
+                        height: 300.0,
                       ),
                       Container(
-                        height: 250.0,
+                        height: 300.0,
                         width: MediaQuery.of(context).size.width,
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -219,7 +260,7 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                         child: Column(
                           children: [
                             SizedBox(
-                              height: 190,
+                              height: 240,
                               child: ControlButtons(_player)
                             ),
                             Container(
@@ -248,27 +289,98 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                         children: [
                           Container(
                             height: 90,
-                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                            padding: const EdgeInsets.only(bottom: 10, left: 20),
                             color: Colors.black.withOpacity(.1),
                             width: MediaQuery.of(context).size.width,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                            child: Stack(
                               children: [
-                                Flexible(
-                                  child: Text(lesson.title.toString(), style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white
-                                  ),),
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () {
+                                          showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(5)
+                                            ),
+                                            backgroundColor: Colors.transparent,
+                                            builder: (context) {
+                                                return StatefulBuilder(
+                                                    builder: (context, setState) {
+                                                      return Container(
+                                                        decoration: BoxDecoration(
+                                                            color: Colors.white,
+                                                            borderRadius: BorderRadius.circular(10)
+                                                        ),
+                                                        margin: const EdgeInsets.all(10),
+                                                        child: Container(
+                                                          width: MediaQuery.of(context).size.width,
+                                                          padding: const EdgeInsets.all(20),
+                                                          child: Column(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: [
+                                                              Flexible(
+                                                                child: Text(lesson.title.toString(), style: const TextStyle(
+                                                                    fontSize: 20,
+                                                                    fontWeight: FontWeight.w600,
+                                                                    color: Colors.black
+                                                                ),),
+                                                              ),
+                                                              const SizedBox(height: 2,),
+                                                              if (lesson.author != null)
+                                                                Text("${lesson.author!.firstname} ${lesson.author!.lastname}", style: TextStyle(
+                                                                    fontSize: 14,
+                                                                    fontWeight: FontWeight.w400,
+                                                                    color: Colors.black.withOpacity(.5)
+                                                                )),
+                                                              const Divider(),
+                                                              Flexible(
+                                                                child: Text(lesson.description.toString(), style: const TextStyle(
+                                                                    fontSize: 15,
+                                                                    fontWeight: FontWeight.w400,
+                                                                    color: Colors.black
+                                                                ),),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                );
+                                              }
+                                          );
+                                        },
+                                        icon: Icon(Icons.info_outline, color: Colors.white,)
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                const SizedBox(height: 2,),
-                                if (lesson.author != null)
-                                Text("${lesson.author!.firstname} ${lesson.author!.lastname}", style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.white.withOpacity(.5)
-                                )),
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Flexible(
+                                        child: Text(lesson.title.toString(), style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white
+                                        ),),
+                                      ),
+                                      const SizedBox(height: 2,),
+                                      if (lesson.author != null)
+                                      Text("${lesson.author!.firstname} ${lesson.author!.lastname}", style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                          color: Colors.white.withOpacity(.5)
+                                      )),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -347,7 +459,7 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
                                                 decoration: BoxDecoration(
                                                   borderRadius: BorderRadius.circular(30),
                                                   image:current.imagePath == null ? null : DecorationImage(
-                                                      image: NetworkImage( AppUrl.domainName + current.imagePath.toString()),
+                                                      image: NetworkImage(AppUrl.domainName + current.imagePath.toString()),
                                                       fit: BoxFit.cover
                                                   ),
                                                   color: current.imagePath == null ? Colors.white : null,
@@ -409,12 +521,11 @@ class _DetailViewState extends State<DetailView> with WidgetsBindingObserver {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primaryColor,
-        tooltip: 'Nouveau',
+        tooltip: 'Commentaires',
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50)
+          borderRadius: BorderRadius.circular(50),
         ),
-        onPressed: (){
-
+        onPressed: () {
         },
         child: const Icon(Icons.chat_outlined, color: Colors.white, size: 28),
       ),

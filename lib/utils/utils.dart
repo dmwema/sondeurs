@@ -2,6 +2,7 @@ import 'package:another_flushbar/flushbar.dart';
 import 'package:another_flushbar/flushbar_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:sondeurs/model/user/user_model.dart';
 
 class Utils {
   static String pusherAppId = "1543547";
@@ -10,7 +11,7 @@ class Utils {
   static String pusherCluster = "us2";
 
   static String errorMessage = "Une erreur est survenue. Veuillez ressayer plutard";
-
+  
   static toastMessage(String message) {
     Fluttertoast.showToast(
       msg: message,
@@ -18,6 +19,10 @@ class Utils {
       textColor: Colors.white,
       toastLength: Toast.LENGTH_LONG,
     );
+  }
+
+  static bool isAuthor (UserModel user) {
+    return user.role == 'author';
   }
 
   static void flushBarErrorMessage(String message, BuildContext context) {

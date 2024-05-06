@@ -14,4 +14,31 @@ class UserRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> get (int id) async {
+    try  {
+      dynamic response = await _apiServices.getGetResponse("${AppUrl.userEndPoint}/$id", auth: true);
+      return response;
+    } catch(e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getAuthors () async {
+    try  {
+      dynamic response = await _apiServices.getGetResponse("${AppUrl.userEndPoint}/authors", auth: true);
+      return response;
+    } catch(e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getNonAuthors () async {
+    try  {
+      dynamic response = await _apiServices.getGetResponse(AppUrl.userEndPoint, auth: true);
+      return response;
+    } catch(e) {
+      rethrow;
+    }
+  }
 }

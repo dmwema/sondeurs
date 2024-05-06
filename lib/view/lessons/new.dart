@@ -41,6 +41,8 @@ class _NewViewState extends State<NewView> {
   Duration audioDuration = Duration.zero;
   Duration position = Duration.zero;
 
+  bool recorderOpen = false;
+
   final ImagePicker picker = ImagePicker();
 
   AudioPlayer audioPlayer = AudioPlayer();
@@ -60,7 +62,7 @@ class _NewViewState extends State<NewView> {
     if (status.isGranted) {
       await recorder.openRecorder();
       recorder.setSubscriptionDuration(
-        const Duration(milliseconds: 100)
+          const Duration(milliseconds: 100)
       );
     }
   }
@@ -114,16 +116,6 @@ class _NewViewState extends State<NewView> {
       print(value);
     });
   }
-
-  // Future stop () async {
-  //   final path = await recorder.stopRecorder();
-  //   if (path != null) {
-  //     setState(() {
-  //     });
-  //     setAudio();
-  //     print('Recorded audio ${audioFile!.uri}');
-  //   }
-  // }
 
   Future resume () async {
     recorder.resumeRecorder();
@@ -499,9 +491,6 @@ class _NewViewState extends State<NewView> {
                       loading: loading,
                       onPress: () async {
                         if (!loading) {
-                          setState(() {
-                            loading = true;
-                          });
                           if (_titleController.text == "") {
                             Utils.flushBarErrorMessage("Vous devez entrer un titre", context);
                           } else if (_descriptionController.text == "") {
@@ -511,6 +500,9 @@ class _NewViewState extends State<NewView> {
                           } else if (audioFile == null) {
                             Utils.flushBarErrorMessage("Vous devez enregistrer la lecon", context);
                           } else {
+                            setState(() {
+                              loading = true;
+                            });
                             Map data = {
                               "title": _titleController.text,
                               "description": _descriptionController.text,

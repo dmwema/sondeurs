@@ -2,28 +2,28 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sondeurs/data/response/status.dart';
-import 'package:sondeurs/model/lesson/lesson_model.dart';
 import 'package:sondeurs/model/user/user_model.dart';
 import 'package:sondeurs/resource/config/app_url.dart';
 import 'package:sondeurs/resource/config/colors.dart';
 import 'package:sondeurs/routes/routes_name.dart';
 import 'package:sondeurs/utils/utils.dart';
-import 'package:sondeurs/view_model/lessons/lessons_view_model.dart';
 import 'package:sondeurs/view_model/user/user_view_model.dart';
 
-class AllView extends StatefulWidget {
-  const AllView({super.key});
+class NewAuthorsView extends StatefulWidget {
+  const NewAuthorsView({super.key});
 
   @override
-  State<StatefulWidget> createState() => _AllViewState();
+  State<StatefulWidget> createState() => _NewAuthorsViewState();
 }
 
-class _AllViewState extends State<AllView> {
-  LessonViewModel lessonViewModel = LessonViewModel();
+class _NewAuthorsViewState extends State<NewAuthorsView> {
+  UserViewModel userViewModel = UserViewModel();
   UserModel? user;
 
+  List<int> selected = [];
+
   Future getData () async {
-    lessonViewModel.getCollection();
+    userViewModel.getNonAuthors();
   }
 
   @override
@@ -59,7 +59,7 @@ class _AllViewState extends State<AllView> {
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: AppColors.primaryColor,
         title: const Text(
-          "Enseignements",
+          "Nouveau",
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w500,
@@ -74,85 +74,93 @@ class _AllViewState extends State<AllView> {
         ],
       ),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: getData,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                  color: AppColors.lightBlackBg,
-                  width: MediaQuery.of(context).size.width,
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Tous les enseignements",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                color: AppColors.lightBlackBg,
+                width: MediaQuery.of(context).size.width,
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Assigner les auteurs",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
+                    ),
+                    Text(
+                      "Veuillez selectionner les utilisateurs que vous voulez assigner comme autheur",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ],
                 ),
-                ChangeNotifierProvider<LessonViewModel>(
-                  create: (BuildContext context) => lessonViewModel,
-                  child: Consumer<LessonViewModel>(
+              ),
+              RefreshIndicator(
+                onRefresh: getData,
+                color: AppColors.primaryColor,
+                child: ChangeNotifierProvider<UserViewModel>(
+                  create: (BuildContext context) => userViewModel,
+                  child: Consumer<UserViewModel>(
                     builder: (context, value, _) {
-                      switch (value.lessonsList.status) {
+                      switch (value.authorsList.status) {
                         case Status.LOADING:
                           return const Padding(
                             padding: EdgeInsets.all(30),
-                            child: Center(
-                              child: CupertinoActivityIndicator(
-                                radius: 15,
-                                color: Colors.white,
-                              ),
+                            child: CupertinoActivityIndicator(
+                              radius: 15,
+                              color: Colors.white,
                             ),
                           );
                         case Status.ERROR:
                           return Padding(
                             padding: const EdgeInsets.all(30),
                             child: Text(
-                              value.lessonsList.message.toString(),
+                              value.authorsList.message.toString(),
                               style: const TextStyle(
                                 color: Colors.white,
                               ),
                             ),
                           );
                         case Status.COMPLETED:
-                          if (value.lessonsList.data!.lessons == null || value.lessonsList.data!.lessons.isEmpty) {
+                          if (value.authorsList.data!.users == null || value.authorsList.data!.users!.isEmpty) {
                             return Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.max,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const SizedBox(height: 30,),
-                                  Image.asset(
-                                    "assets/empty.png",
-                                    width: 80,
-                                    opacity: const AlwaysStoppedAnimation(.1),
-                                  ),
-                                ],
+                              child: Padding(
+                                padding: const EdgeInsets.all(30),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.max,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      "assets/empty.png",
+                                      width: 80,
+                                      opacity: const AlwaysStoppedAnimation(.1),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }
                           return ListView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
                             shrinkWrap: true,
-                            itemCount: value.lessonsList.data!.lessons.length,
+                            itemCount: value.authorsList.data!.users.length,
                             itemBuilder: (context, index) {
-                              LessonModel current = value.lessonsList.data!.lessons[index];
+                              UserModel current = value.authorsList.data!.users[index];
                               return ListTile(
                                 onTap: () {
                                   Navigator.pushNamed(
-                                    context,
-                                    RoutesName.lessonDetail,
-                                    arguments: current.id!
+                                      context,
+                                      RoutesName.authorDetail,
+                                      arguments: current.id!
                                   );
                                 },
                                 leading: Container(
@@ -171,7 +179,7 @@ class _AllViewState extends State<AllView> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      current.title.toString(),
+                                      "${current.firstname} ${current.lastname}",
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         color: Colors.white,
@@ -179,7 +187,7 @@ class _AllViewState extends State<AllView> {
                                       ),
                                     ),
                                     Text(
-                                    current.description.toString().length > 40 ? current.description.toString().substring(1, 40): current.description.toString(),
+                                      current.email.toString(),
                                       style: TextStyle(
                                         fontWeight: FontWeight.w400,
                                         color: Colors.white.withOpacity(.5),
@@ -192,10 +200,20 @@ class _AllViewState extends State<AllView> {
                                   vertical: 10,
                                   horizontal: 20,
                                 ),
-                                trailing: const Icon(
-                                  Icons.arrow_forward_ios,
-                                  color: Colors.white24,
-                                  size: 15,
+                                trailing: Checkbox(
+                                  activeColor: AppColors.primaryColor,
+                                  onChanged: (value) {
+                                    if (value == true) {
+                                      setState(() {
+                                        selected.add(current.id!);
+                                      });
+                                    } else {
+                                      setState(() {
+                                        selected.remove(current.id!);
+                                      });
+                                    }
+                                  },
+                                  value: selected.contains(current.id!),
                                 ),
                                 shape: Border(
                                   bottom: BorderSide(
@@ -210,22 +228,29 @@ class _AllViewState extends State<AllView> {
                     },
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-      floatingActionButton: user != null && Utils.isAuthor(user!) ? FloatingActionButton(
-        backgroundColor: AppColors.primaryColor,
-        tooltip: 'Nouveau',
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50)
-        ),
-        onPressed: (){
-          Navigator.pushNamed(context, RoutesName.newLesson);
+      floatingActionButton: user != null && Utils.isAuthor(user!) ? InkWell(
+        onTap: (){
+
         },
-        child: const Icon(Icons.add, color: Colors.white, size: 28),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor,
+            borderRadius: BorderRadius.circular(10)
+          ),
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          child: const Text("Enregistrer", style: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 20,
+            color: Colors.white
+          ),),
+        ),
       ): null,
     );
   }
+
 }

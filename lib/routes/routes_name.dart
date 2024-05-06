@@ -7,13 +7,20 @@ class RoutesName {
 
   static const String home = 'home_view';
 
-  static const String categories = 'categories_view';
+  static const String categoryDetail = 'category_detail';
+  static const String allCategories = 'categories_view';
+  static const String newCategory = 'category_new';
 
   static const String allLessons = 'all_view';
   static const String lessonDetail = 'lessons_detail';
+  static const String editLesson = 'lesson_edit';
   static const String newLesson = 'lesson_new';
 
+  static const String allAuthors = 'all_authors';
+  static const String authorDetail = 'author_details';
+  static const String newAuthors = 'new_authors';
 
-  static const String distributions = 'distributions_view';
+  static const String account = 'account_view';
   static const String sales = 'sales_view';
+  static const String testeaudio = 'testeaudio';
 }

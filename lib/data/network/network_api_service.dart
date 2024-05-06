@@ -5,6 +5,7 @@ import 'package:sondeurs/data/app_exceptions.dart';
 import 'package:sondeurs/data/network/base_api_service.dart';
 import 'package:sondeurs/model/user/user_model.dart';
 import 'package:sondeurs/service/user_service.dart';
+import 'package:sondeurs/view_model/user/user_view_model.dart';
 
 class NetworkApiService extends BaseApiServices {
   Future<UserModel> getAccountData () => UserService().getUser();
@@ -139,7 +140,12 @@ class NetworkApiService extends BaseApiServices {
   }
 
   @override
-  Future getMultipartApiResponse(String url, data, {required Map<String, dynamic> files}) async {
+  Future getMultipartApiResponse(String url, data, {required Map<String, dynamic> files, bool auth = false}) async {
+
+    await getAccountData ().then((value) {
+      user = value;
+    });
+
     dynamic responseJson;
     try {
       var postUri = Uri.parse(url);
@@ -154,6 +160,10 @@ class NetworkApiService extends BaseApiServices {
       data.forEach((key, value) {
         request.fields[key] = value.toString();
       });
+
+      if (auth) {
+        request.headers['Authorization'] = 'Bearer ${user.token}';
+      }
 
       http.StreamedResponse response = await request.send();
       var responseData = await http.Response.fromStream(response);

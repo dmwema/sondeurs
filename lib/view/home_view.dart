@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:sondeurs/model/user/user_model.dart';
 import 'package:sondeurs/resource/config/colors.dart';
 import 'package:sondeurs/routes/routes_name.dart';
+import 'package:sondeurs/view_model/user/user_view_model.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -12,18 +14,30 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  UserModel? user;
+
+  @override
+  void initState() {
+    UserViewModel().getUser().then((value) {
+      setState(() {
+        user = value;
+      });
+    });
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.blackBg,
-      drawer: SafeArea(
-        child: Container(
-          color: Colors.white,
-          child: const Column(
-            children: [],
-          ),
-        ),
-      ),
+      // drawer: SafeArea(
+      //   child: Container(
+      //     color: Colors.white,
+      //     child: const Column(
+      //       children: [],
+      //     ),
+      //   ),
+      // ),
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: AppColors.primaryColor,
@@ -32,8 +46,7 @@ class _HomeViewState extends State<HomeView> {
             fontWeight: FontWeight.w500,
             fontSize: 17
         ),),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.person_alt, color: Colors.white,)),
+        actions: const [
         ],
       ),
       body: SafeArea(
@@ -52,7 +65,8 @@ class _HomeViewState extends State<HomeView> {
                         fontWeight: FontWeight.w400,
                         color: Colors.white.withOpacity(.5),
                       ),),
-                      const Text("Daniel Mwema", style: TextStyle(
+                      if (user != null)
+                      Text("${user!.firstname} ${user!.lastname}", style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w500,
                           color: Colors.white
@@ -99,7 +113,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, RoutesName.categories);
+                        Navigator.pushNamed(context, RoutesName.allCategories);
                       },
                       child: Container(
                         decoration: BoxDecoration(
@@ -130,6 +144,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                     GestureDetector(
                       onTap: () {
+                        Navigator.pushNamed(context, RoutesName.allAuthors);
                       },
                       child: Container(
                         decoration: BoxDecoration(
@@ -160,7 +175,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, RoutesName.distributions);
+                        Navigator.pushNamed(context, RoutesName.account);
                       },
                       child: Container(
                         decoration: BoxDecoration(
@@ -173,12 +188,12 @@ class _HomeViewState extends State<HomeView> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Icon(CupertinoIcons.gear_alt_fill, color: Colors.white, size: 50,),
+                            const Icon(CupertinoIcons.person_alt, color: Colors.white, size: 50,),
                             const SizedBox(height: 5,),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text("Reglages", style: TextStyle(
+                                Text("Mon compte", style: TextStyle(
                                     fontWeight: FontWeight.w500,
                                     fontSize: 16,
                                     color:  Colors.white.withOpacity(.7)

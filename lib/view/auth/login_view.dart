@@ -4,6 +4,8 @@ import 'package:sondeurs/resource/components/buttons/rounded_button.dart';
 import 'package:sondeurs/resource/components/form/form_field.dart';
 import 'package:sondeurs/resource/config/colors.dart';
 import 'package:sondeurs/routes/routes_name.dart';
+import 'package:sondeurs/utils/utils.dart';
+import 'package:sondeurs/view_model/auth/auth_view_model.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -13,6 +15,13 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
+  AuthViewModel authViewModel = AuthViewModel();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool loading = false;
+
+  ValueNotifier<bool> obscurePassword = ValueNotifier<bool>(true);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,22 +50,57 @@ class _LoginViewState extends State<LoginView> {
                     children: [
                       CustomFormField(
                         label: "E-mail",
+                        controller: _emailController,
                         hint: "Entrez votre adresse E-mail",
-                        password: false,
+                        password: true,
                       ),
                       const SizedBox(height: 15),
-                      CustomFormField(
-                        label: "Mot de passe",
-                        hint: "Entrez votre mot de passe",
-                        password: true,
+                      ValueListenableBuilder(
+                        valueListenable: obscurePassword,
+                        builder: (context, value, child) {
+                          return CustomFormField(
+                            label: "Mot de passe",
+                            controller: _passwordController,
+                            hint: "Entrez votre mot de passe",
+                            password: false,
+                            obscurePassword: obscurePassword.value,
+                            type: TextInputType.visiblePassword,
+                            maxLines: 1,
+                            suffixIcon: InkWell(
+                              onTap: ( ) {
+                                obscurePassword.value = !obscurePassword.value;
+                              },
+                              child: Icon(
+                                  obscurePassword.value ? Icons.visibility_off_outlined: Icons.visibility
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 20),
                       RoundedButton(
-                        title: "Sign In",
-                        loading: false,
-                        onPress: () {
-                          Navigator.pushNamedAndRemoveUntil(
-                              context, RoutesName.home, (route) => false);
+                        title: "Se connecter",
+                        loading: loading,
+                        onPress: () async {
+                          if (!loading) {
+                            if (_emailController.text == "") {
+                              Utils.flushBarErrorMessage("Vous devez entrer l'adresse E-mail", context);
+                            } else if (_passwordController.text == "") {
+                              Utils.flushBarErrorMessage("Vous devez entrer le mot de passe", context);
+                            } else {
+                              setState(() {
+                                loading = true;
+                              });
+                              Map data = {
+                                "email": _emailController.text,
+                                "password": _passwordController.text
+                              };
+                              await authViewModel.login(data, context);
+                              setState(() {
+                                loading = false;
+                              });
+                            }
+                          }
                         },
                       ),
                       const SizedBox(height: 15),
@@ -91,7 +135,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       const SizedBox(height: 5),
                       const Text(
-                        "Se connecter",
+                        "Inscrivez-vous",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

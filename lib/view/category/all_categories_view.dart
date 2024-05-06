@@ -3,26 +3,36 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sondeurs/data/response/status.dart';
 import 'package:sondeurs/model/category/category_model.dart';
+import 'package:sondeurs/model/user/user_model.dart';
+import 'package:sondeurs/resource/config/app_url.dart';
 import 'package:sondeurs/resource/config/colors.dart';
 import 'package:sondeurs/routes/routes_name.dart';
+import 'package:sondeurs/utils/utils.dart';
 import 'package:sondeurs/view_model/category/category_view_model.dart';
+import 'package:sondeurs/view_model/user/user_view_model.dart';
 
-class CategoriesView extends StatefulWidget {
-  const CategoriesView({super.key});
+class AllCategoriesView extends StatefulWidget {
+  const AllCategoriesView({super.key});
 
   @override
-  State<StatefulWidget> createState() => _CategoriesViewState();
+  State<StatefulWidget> createState() => _AllCategoriesViewState();
 }
 
-class _CategoriesViewState extends State<CategoriesView> {
+class _AllCategoriesViewState extends State<AllCategoriesView> {
   CategoryViewModel categoryViewModel = CategoryViewModel();
 
   Future getData () async {
     categoryViewModel.getCollection();
   }
+  UserModel? user;
 
   @override
   void initState() {
+    UserViewModel().getUser().then((value) {
+      setState(() {
+        user = value;
+      });
+    });
     super.initState();
     getData();
   }
@@ -43,7 +53,7 @@ class _CategoriesViewState extends State<CategoriesView> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white,),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushNamedAndRemoveUntil(context, RoutesName.home, (route) => false);
           },
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -113,22 +123,30 @@ class _CategoriesViewState extends State<CategoriesView> {
                             ),
                           );
                         case Status.COMPLETED:
-                          if (value.categoriesList.data!.categories.isEmpty) {
+                          if (value.categoriesList.data!.categories == null || value.categoriesList.data!.categories.isEmpty) {
                             return Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.max,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    "assets/empty.png",
-                                    width: 80,
-                                    opacity: const AlwaysStoppedAnimation(.1),
-                                  ),
-                                ],
+                              child: Padding(
+                                padding: const EdgeInsets.all(30),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.max,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      "assets/empty.png",
+                                      width: 80,
+                                      opacity: const AlwaysStoppedAnimation(.1),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }
+
+                          if (value.categoriesList.data!.categories == null) {
+                            return Container();
+                          }
+
                           return ListView.builder(
                             shrinkWrap: true,
                             itemCount: value.categoriesList.data!.categories.length,
@@ -137,8 +155,9 @@ class _CategoriesViewState extends State<CategoriesView> {
                               return ListTile(
                                 onTap: () {
                                   Navigator.pushNamed(
-                                    context,
-                                    RoutesName.lessonDetail,
+                                      context,
+                                      RoutesName.categoryDetail,
+                                      arguments: current.id!
                                   );
                                 },
                                 leading: Container(
@@ -147,7 +166,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
                                     image: current.imagePath == null ? null : DecorationImage(
-                                        image: NetworkImage(current.imagePath.toString()),
+                                        image: NetworkImage(AppUrl.domainName + current.imagePath.toString()),
                                         fit: BoxFit.cover
                                     ),
                                     color: current.imagePath == null ? Colors.white : null,
@@ -201,7 +220,17 @@ class _CategoriesViewState extends State<CategoriesView> {
           ),
         ),
       ),
+      floatingActionButton: user != null && Utils.isAuthor(user!) ? FloatingActionButton(
+        backgroundColor: AppColors.primaryColor,
+        tooltip: 'Nouveau',
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(50)
+        ),
+        onPressed: (){
+          Navigator.pushNamed(context, RoutesName.newCategory);
+        },
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
+      ): null,
     );
   }
-
 }

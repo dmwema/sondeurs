@@ -43,7 +43,7 @@ class LessonRepository {
 
   Future<dynamic> create (Map data, Map<String, dynamic> $files) async {
     try  {
-      dynamic response = await _apiServices.getMultipartApiResponse(AppUrl.lessonsEndPoint, data, files: $files);
+      dynamic response = await _apiServices.getMultipartApiResponse(AppUrl.lessonsEndPoint, data, files: $files, auth: true);
       return response;
     } catch(e) {
       rethrow;
